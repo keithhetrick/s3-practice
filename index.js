@@ -80,7 +80,7 @@ const listObjectsInBucket = (bucketName) => {
   });
 };
 
-// UPDATE - Update file
+// UPDATE - Update file in Bucket
 const renameObjectsInBucket = (bucketName, oldKeyName, newKeyName) => {
   // Create the parameters for calling listObjects
   let bucketParams = {
@@ -99,7 +99,7 @@ const renameObjectsInBucket = (bucketName, oldKeyName, newKeyName) => {
   });
 };
 
-// DELETE - Delete bucket
+// DELETE - Delete bucket // WON'T DELETE BUCKET IF ITS NOT EMPTY
 const deleteBucket = (bucketName) => {
   // Create params for S3.deleteBucket
   let bucketParams = {
@@ -116,7 +116,7 @@ const deleteBucket = (bucketName) => {
   });
 };
 
-// Download file
+// DOWNLOAD - Download file
 const downloadFile = (bucketName, keyName, filePath) => {
   // Create the parameters for calling listObjects
   let bucketParams = {
@@ -124,7 +124,7 @@ const downloadFile = (bucketName, keyName, filePath) => {
     Key: keyName,
   };
 
-  // Create the file to store the data
+  // Create the file to store in root folder // filePath is the same uploadFile function - change in both locations if desired
   const file = require("fs").createWriteStream(filePath);
 
   // Call S3 to retrieve the file
@@ -139,23 +139,27 @@ const downloadFile = (bucketName, keyName, filePath) => {
     });
 };
 
+// sleeper function to wait for async functions to finish
 function sleep(ms) {
   console.log("Wait...");
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Main Function to run when called
+// Main Function to run all desired CRUD operations // Comment out functions you don't want to run
 async function main() {
+  // CREATE - Create Bucket function call
   console.log("\nCreating bucket : ");
-
   createBucket(BUCKET_NAME);
   await sleep(5000);
-  console.log("\nListing out all the buckets in your AWS S3: ");
 
+  // READ - List buckets function call
+  console.log("\nListing out all the buckets in your AWS S3: ");
   listBuckets(s3);
   await sleep(5000);
-  console.log("\nUploading image1 to " + BUCKET_NAME);
 
+  // CREATE - Upload files function call
+  console.log("\nUploading image1 to " + BUCKET_NAME);
+  // loads from root folder - change path to desired folder when running locally
   uploadFile(
     "daniel-norin-lBhhnhndpE0-unsplash.jpg",
     BUCKET_NAME,
@@ -164,22 +168,27 @@ async function main() {
   await sleep(5000);
 
   console.log("\nUploading image2 to " + BUCKET_NAME);
+  // loads from root folder - change path to desired folder when running locally
   uploadFile("florian-olivo-4hbJ-eymZ1o-unsplash.jpg", BUCKET_NAME, "code.jpg");
   await sleep(5000);
 
+  // READ - List files in Bucket function call
   console.log(
     "\nListing out all the files/objects in the bucket " + BUCKET_NAME
   );
   listObjectsInBucket(BUCKET_NAME);
   await sleep(5000);
 
+  // UPDATE - file Rename function call
   console.log("\nRenaming the file in the bucket " + BUCKET_NAME);
   renameObjectsInBucket(BUCKET_NAME, "football.jpg", "football1.jpg");
   await sleep(5000);
 
+  // DELETE - Delete bucket function call
   console.log("\nDeleting bucket : " + BUCKET_NAME);
   deleteBucket(BUCKET_NAME);
 
+  // DOWNLOAD - Download file function call
   console.log("\nDownloading file from " + BUCKET_NAME);
   downloadFile(BUCKET_NAME, "football.jpg", "football.jpg");
   await sleep(5000);
