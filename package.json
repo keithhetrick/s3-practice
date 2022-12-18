@@ -1,7 +1,7 @@
 {
   "name": "s3-practice",
   "version": "1.0.0",
-  "description": "",
+  "description": "Full CRUD with S3, AWS, and Node.js. Uses a random bucket name generator to create a unique bucket name for each user.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "aws-sdk": "^2.1277.0",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "unique-names-generator": "^4.7.1"
   }
 }

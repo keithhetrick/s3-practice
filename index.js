@@ -1,6 +1,13 @@
 const dotenv = require("dotenv");
 dotenv.config();
 
+const {
+  uniqueNamesGenerator,
+  adjectives,
+  colors,
+  animals,
+} = require("unique-names-generator");
+
 const AWS = require("aws-sdk");
 
 const s3 = new AWS.S3({
@@ -8,7 +15,33 @@ const s3 = new AWS.S3({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_ID,
 });
 
-const BUCKET_NAME = process.env.AWS_BUCKET_NAME || "rando-bucket-name-12121212";
+// Custom Config for Random Bucket Name Generator
+const customConfig = {
+  dictionaries: [adjectives, colors, animals],
+  separator: "-",
+};
+
+// Random Bucket Name Creator Function
+const randomName = uniqueNamesGenerator(customConfig);
+
+const createRandomBucketName = () => {
+  let bucketName = randomName + "-";
+  let bucketNameSuffix = Math.floor(Math.random() * 100000000);
+  bucketName += bucketNameSuffix;
+  return bucketName.toLowerCase();
+};
+
+const BUCKET_NAME = createRandomBucketName();
+
+// append random bucket name to randomBucketName.txt file
+const fs = require("fs");
+fs.appendFile("randomBucketName.txt", BUCKET_NAME + "\n", function (err) {
+  if (err) {
+    console.log(err);
+  } else {
+    console.log(`Random Bucket Name "${BUCKET_NAME}" created`);
+  }
+});
 
 // CRUD Operations
 
@@ -100,7 +133,7 @@ const renameObjectsInBucket = (bucketName, oldKeyName, newKeyName) => {
 };
 
 // DELETE - Delete bucket // WON'T DELETE BUCKET IF ITS NOT EMPTY
-const deleteBucket = (bucketName) => {
+const deleteSingleBucket = (bucketName) => {
   // Create params for S3.deleteBucket
   let bucketParams = {
     Bucket: bucketName,
@@ -108,6 +141,77 @@ const deleteBucket = (bucketName) => {
 
   // Call S3 to delete the bucket
   s3.deleteBucket(bucketParams, function (err, data) {
+    if (err) {
+      console.log("Error", err);
+    } else {
+      console.log("Success", data);
+    }
+  });
+};
+
+// DELETE - Delete multiple buckets // WILL DELETE BUCKET IF ITS NOT EMPTY
+const deleteMultipleBuckets = (bucketNames) => {
+  // Loop through array of bucket names
+  for (let i = 0; i < bucketNames.length; i++) {
+    // Create params for S3.deleteBucket
+    let bucketParams = {
+      Bucket: bucketNames[i],
+    };
+
+    // Call S3 to delete the bucket
+    s3.deleteBucket(bucketParams, function (err, data) {
+      if (err) {
+        console.log("Error", err);
+      } else {
+        console.log("Success", data);
+      }
+    });
+  }
+};
+
+// DELETE - Delete single file in Bucket
+const deleteSingleObjectInBucket = (bucketName, keyName) => {
+  // Create the parameters for calling listObjects
+  let bucketParams = {
+    Bucket: bucketName,
+    Delete: {
+      Objects: [
+        {
+          Key: keyName,
+        },
+      ],
+    },
+  };
+
+  // Call S3 to delete the objects in the bucket
+  s3.deleteObjects(bucketParams, function (err, data) {
+    if (err) {
+      console.log("Error", err);
+    } else {
+      console.log("Success", data);
+    }
+  });
+};
+
+// DELETE - Delete multiple file(s) in Bucket using loop
+const deleteMultipleObjectsInBucket = (bucketName, keyNames) => {
+  // Create the parameters for calling listObjects
+  let bucketParams = {
+    Bucket: bucketName,
+    Delete: {
+      Objects: [],
+    },
+  };
+
+  // Loop through array of key names and add to bucketParams
+  for (let i = 0; i < keyNames.length; i++) {
+    bucketParams.Delete.Objects.push({
+      Key: keyNames[i],
+    });
+  }
+
+  // Call S3 to delete the objects in the bucket
+  s3.deleteObjects(bucketParams, function (err, data) {
     if (err) {
       console.log("Error", err);
     } else {
@@ -161,7 +265,7 @@ async function main() {
   console.log("\nUploading image1 to " + BUCKET_NAME);
   // loads from root folder - change path to desired folder when running locally
   uploadFile(
-    "daniel-norin-lBhhnhndpE0-unsplash.jpg",
+    "/assets/daniel-norin-lBhhnhndpE0-unsplash.jpg",
     BUCKET_NAME,
     "football.jpg"
   );
@@ -169,7 +273,11 @@ async function main() {
 
   console.log("\nUploading image2 to " + BUCKET_NAME);
   // loads from root folder - change path to desired folder when running locally
-  uploadFile("florian-olivo-4hbJ-eymZ1o-unsplash.jpg", BUCKET_NAME, "code.jpg");
+  uploadFile(
+    "/assets/florian-olivo-4hbJ-eymZ1o-unsplash.jpg",
+    BUCKET_NAME,
+    "code.jpg"
+  );
   await sleep(5000);
 
   // READ - List files in Bucket function call
@@ -184,9 +292,29 @@ async function main() {
   renameObjectsInBucket(BUCKET_NAME, "football.jpg", "football1.jpg");
   await sleep(5000);
 
+  // DELETE - Delete single file function call
+  console.log("\nDeleting file from " + BUCKET_NAME);
+  deleteSingleObjectInBucket(BUCKET_NAME, "football1.jpg");
+  await sleep(5000);
+
+  // DELETE - Delete multiple files function call
+  console.log("\nDeleting file from " + BUCKET_NAME);
+  deleteMultipleObjectsInBucket(BUCKET_NAME, [
+    "football1.jpg",
+    "football.jpg",
+    "code.jpg",
+  ]);
+  await sleep(5000);
+
   // DELETE - Delete bucket function call
   console.log("\nDeleting bucket : " + BUCKET_NAME);
-  deleteBucket(BUCKET_NAME);
+  deleteSingleBucket(BUCKET_NAME);
+  await sleep(5000);
+
+  // DELETE - Delete multiple buckets function call
+  console.log("\nDeleting multiple buckets : ");
+  deleteMultipleBuckets(["bucket1", "bucket2", "bucket3"]);
+  await sleep(5000);
 
   // DOWNLOAD - Download file function call
   console.log("\nDownloading file from " + BUCKET_NAME);
