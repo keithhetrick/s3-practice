@@ -37,7 +37,7 @@ const createRandomBucketName = () => {
   return bucketName.toLowerCase();
 };
 
-const BUCKET_NAME = createRandomBucketName();
+const BUCKET_NAME = createRandomBucketName(); // <--- IF EDITING EXISTING BUCKET, REPLACE & INSERT BUCKET NAME HERE
 
 // append random bucket name to randomBucketName.txt file
 const fs = require("fs");
@@ -317,19 +317,12 @@ async function main() {
   await sleep(5000);
 
   // CREATE - Upload files function call
-  console.log("\nUploading image1 to " + BUCKET_NAME);
+  console.log("\nUploading image to " + BUCKET_NAME);
   // loads from root folder - change path to desired folder when running locally
   uploadSingleFile(
-    "/assets/daniel-norin-lBhhnhndpE0-unsplash.jpg",
+    "assets/daniel-norin-lBhhnhndpE0-unsplash.jpg",
     BUCKET_NAME,
     "football.jpg"
-  );
-  await sleep(5000);
-  console.log("\nUploading image2 to " + BUCKET_NAME);
-  uploadSingleFile(
-    "/assets/florian-olivo-4hbJ-eymZ1o-unsplash.jpg",
-    BUCKET_NAME,
-    "code.jpg"
   );
   await sleep(5000);
 
@@ -337,8 +330,8 @@ async function main() {
   console.log("\nUploading multiple files to " + BUCKET_NAME);
   uploadMultipleFiles(
     [
-      "/assets/daniel-norin-lBhhnhndpE0-unsplash.jpg",
-      "/assets/florian-olivo-4hbJ-eymZ1o-unsplash.jpg",
+      "assets/daniel-norin-lBhhnhndpE0-unsplash.jpg",
+      "assets/florian-olivo-4hbJ-eymZ1o-unsplash.jpg",
     ],
     BUCKET_NAME,
     ["football.jpg", "code.jpg"]
