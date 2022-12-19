@@ -15,6 +15,12 @@ const s3 = new AWS.S3({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_ID,
 });
 
+// ======================================================== //
+// ======================================================== //
+//      U N I Q U E     N A M E S    G E N E R A T O R
+// ======================================================== //
+// ======================================================== //
+
 // Custom Config for Random Bucket Name Generator
 const customConfig = {
   dictionaries: [adjectives, colors, animals],
@@ -43,7 +49,15 @@ fs.appendFile("randomBucketName.txt", BUCKET_NAME + "\n", function (err) {
   }
 });
 
-// CRUD Operations
+// ======================================================== //
+// ======================================================== //
+//             C R U D    O P E R T A T I O N S
+// ======================================================== //
+// ======================================================== //
+
+// ======================================================== //
+//             C R E A T E    F U N C T I O N S
+// ======================================================== //
 
 // CREATE - Create Bucket
 const createBucket = (bucketName) => {
@@ -62,19 +76,8 @@ const createBucket = (bucketName) => {
   });
 };
 
-// READ - List buckets
-const listBuckets = (s3) => {
-  s3.listBuckets(function (err, data) {
-    if (err) {
-      console.log("Error", err);
-    } else {
-      console.log("Success", data.Buckets);
-    }
-  });
-};
-
 // CREATE - Upload files
-const uploadFile = (filePath, bucketName, keyName) => {
+const uploadSingleFile = (filePath, bucketName, keyName) => {
   let fs = require("fs");
   // Read the file
   const file = fs.readFileSync(filePath);
@@ -96,6 +99,67 @@ const uploadFile = (filePath, bucketName, keyName) => {
   });
 };
 
+// CREATE - Upload multiple files
+const uploadMultipleFiles = (filePaths, bucketName, keyNames) => {
+  let fs = require("fs");
+  let num = filePaths.length;
+  for (let i = 0; i < num; i++) {
+    let file = fs.readFileSync(filePaths[i]);
+    let uploadParams = {
+      Bucket: bucketName,
+      Key: keyNames[i],
+      Body: file,
+    };
+
+    s3.upload(uploadParams, function (err, data) {
+      if (err) {
+        console.log("Error", err);
+      }
+      if (data) {
+        console.log("Upload Success", data.Location);
+      }
+    });
+  }
+};
+
+// CREATE - Download file
+const downloadFile = (bucketName, keyName, filePath) => {
+  // Create the parameters for calling listObjects
+  let bucketParams = {
+    Bucket: bucketName,
+    Key: keyName,
+  };
+
+  // Create the file to store in root folder
+  const file = require("fs").createWriteStream(filePath);
+
+  // Call S3 to retrieve the file
+  s3.getObject(bucketParams)
+    .createReadStream()
+    .pipe(file)
+    .on("error", function (err) {
+      console.log("Error", err);
+    })
+    .on("close", function () {
+      console.log("Done");
+    });
+};
+
+// ======================================================== //
+//               R E A D   F U N C T I O N S
+// ======================================================== //
+
+// READ - List buckets
+const listBuckets = (s3) => {
+  s3.listBuckets(function (err, data) {
+    if (err) {
+      console.log("Error", err);
+    } else {
+      console.log("Success", data.Buckets);
+    }
+  });
+};
+
 // READ - List files in Bucket
 const listObjectsInBucket = (bucketName) => {
   // Create the parameters for calling listObjects
@@ -112,6 +176,10 @@ const listObjectsInBucket = (bucketName) => {
     }
   });
 };
+
+// ======================================================== //
+//             U P D A T E   F U N C T I O N S
+// ======================================================== //
 
 // UPDATE - Update file in Bucket
 const renameObjectsInBucket = (bucketName, oldKeyName, newKeyName) => {
@@ -131,6 +199,10 @@ const renameObjectsInBucket = (bucketName, oldKeyName, newKeyName) => {
     }
   });
 };
+
+// ======================================================== //
+//            D E L E T E    F U N C T I O N S
+// ======================================================== //
 
 // DELETE - Delete bucket // WON'T DELETE BUCKET IF ITS NOT EMPTY
 const deleteSingleBucket = (bucketName) => {
@@ -220,64 +292,66 @@ const deleteMultipleObjectsInBucket = (bucketName, keyNames) => {
   });
 };
 
-// DOWNLOAD - Download file
-const downloadFile = (bucketName, keyName, filePath) => {
-  // Create the parameters for calling listObjects
-  let bucketParams = {
-    Bucket: bucketName,
-    Key: keyName,
-  };
-
-  // Create the file to store in root folder // filePath is the same uploadFile function - change in both locations if desired
-  const file = require("fs").createWriteStream(filePath);
-
-  // Call S3 to retrieve the file
-  s3.getObject(bucketParams)
-    .createReadStream()
-    .pipe(file)
-    .on("error", function (err) {
-      console.log("Error", err);
-    })
-    .on("close", function () {
-      console.log("Done");
-    });
-};
-
 // sleeper function to wait for async functions to finish
 function sleep(ms) {
   console.log("Wait...");
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Main Function to run all desired CRUD operations // Comment out functions you don't want to run
+// ======================================================== //
+// ======================================================== //
+//               M A I N   F U N C T I O N
+// ======================================================== //
+// ======================================================== //
+
 async function main() {
+  // Main Function to run all desired CRUD operations // Comment out functions you don't want to run
+
+  // ======================================================== //
+  //             C R E A T E    F U N C T I O N S
+  // ======================================================== //
+
   // CREATE - Create Bucket function call
   console.log("\nCreating bucket : ");
   createBucket(BUCKET_NAME);
   await sleep(5000);
 
-  // READ - List buckets function call
-  console.log("\nListing out all the buckets in your AWS S3: ");
-  listBuckets(s3);
-  await sleep(5000);
-
   // CREATE - Upload files function call
   console.log("\nUploading image1 to " + BUCKET_NAME);
   // loads from root folder - change path to desired folder when running locally
-  uploadFile(
+  uploadSingleFile(
     "/assets/daniel-norin-lBhhnhndpE0-unsplash.jpg",
     BUCKET_NAME,
     "football.jpg"
   );
   await sleep(5000);
-
   console.log("\nUploading image2 to " + BUCKET_NAME);
-  // loads from root folder - change path to desired folder when running locally
-  uploadFile(
+  uploadSingleFile(
     "/assets/florian-olivo-4hbJ-eymZ1o-unsplash.jpg",
     BUCKET_NAME,
     "code.jpg"
   );
+  await sleep(5000);
+
+  // CREATE - Upload multiple files function call
+  console.log("\nUploading multiple files to " + BUCKET_NAME);
+  uploadMultipleFiles(
+    [
+      "/assets/daniel-norin-lBhhnhndpE0-unsplash.jpg",
+      "/assets/florian-olivo-4hbJ-eymZ1o-unsplash.jpg",
+    ],
+    BUCKET_NAME,
+    ["football.jpg", "code.jpg"]
+  );
+  await sleep(5000);
+
+  // ======================================================== //
+  //               R E A D   F U N C T I O N S
+  // ======================================================== //
+
+  // READ - List buckets function call
+  console.log("\nListing out all the buckets in your AWS S3: ");
+  listBuckets(s3);
   await sleep(5000);
 
   // READ - List files in Bucket function call
@@ -287,10 +361,18 @@ async function main() {
   listObjectsInBucket(BUCKET_NAME);
   await sleep(5000);
 
+  // ======================================================== //
+  //               U P D A T E   F U N C T I O N
+  // ======================================================== //
+
   // UPDATE - file Rename function call
   console.log("\nRenaming the file in the bucket " + BUCKET_NAME);
   renameObjectsInBucket(BUCKET_NAME, "football.jpg", "football1.jpg");
   await sleep(5000);
+
+  // ======================================================== //
+  //            D E L E T E    F U N C T I O N S
+  // ======================================================== //
 
   // DELETE - Delete single file function call
   console.log("\nDeleting file from " + BUCKET_NAME);
@@ -315,6 +397,10 @@ async function main() {
   console.log("\nDeleting multiple buckets : ");
   deleteMultipleBuckets(["bucket1", "bucket2", "bucket3"]);
   await sleep(5000);
+
+  // ======================================================== //
+  //            D O W N L O A D    F U N C T I O N
+  // ======================================================== //
 
   // DOWNLOAD - Download file function call
   console.log("\nDownloading file from " + BUCKET_NAME);
