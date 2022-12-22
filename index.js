@@ -1,3 +1,12 @@
+/*
+███████╗██████╗      ██████╗██████╗ ██╗   ██╗██████╗      ██████╗ ██████╗ ███████╗██████╗  █████╗ ████████╗██╗ ██████╗ ███╗   ██╗███████╗
+██╔════╝╚════██╗    ██╔════╝██╔══██╗██║   ██║██╔══██╗    ██╔═══██╗██╔══██╗██╔════╝██╔══██╗██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
+███████╗ █████╔╝    ██║     ██████╔╝██║   ██║██║  ██║    ██║   ██║██████╔╝█████╗  ██████╔╝███████║   ██║   ██║██║   ██║██╔██╗ ██║███████╗
+╚════██║ ╚═══██╗    ██║     ██╔══██╗██║   ██║██║  ██║    ██║   ██║██╔═══╝ ██╔══╝  ██╔══██╗██╔══██║   ██║   ██║██║   ██║██║╚██╗██║╚════██║
+███████║██████╔╝    ╚██████╗██║  ██║╚██████╔╝██████╔╝    ╚██████╔╝██║     ███████╗██║  ██║██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║███████║
+╚══════╝╚═════╝      ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝      ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
+*/
+
 const dotenv = require("dotenv");
 dotenv.config();
 
@@ -38,9 +47,11 @@ const createRandomBucketName = () => {
 };
 
 const BUCKET_NAME = createRandomBucketName(); // <--- IF EDITING EXISTING BUCKET, REPLACE & INSERT BUCKET NAME HERE
+// const BUCKET_NAME = "dark-violet-ferret-75182240"; // <--- IF EDITING EXISTING BUCKET, REPLACE & INSERT BUCKET NAME HERE
 
-// append random bucket name to randomBucketName.txt file
+// append createRandomBucketName to randomBucketName.txt file
 const fs = require("fs");
+const { S3 } = require("aws-sdk");
 fs.appendFile("randomBucketName.txt", BUCKET_NAME + "\n", function (err) {
   if (err) {
     console.log(err);
@@ -143,6 +154,47 @@ const downloadFile = (bucketName, keyName, filePath) => {
     .on("close", function () {
       console.log("Done");
     });
+};
+
+// create url for file in bucket & add to a new txt file, with DOWNLOAD permissions
+const createFileUrl = (bucketName, keyName) => {
+  let url = `https://${bucketName}.s3.amazonaws.com/${keyName}`;
+  fs.appendFile("fileUrls.txt", url + "\n", function (err) {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log(`Download URL "${url}" created`);
+    }
+  });
+
+  // Create the parameters for calling listObjects
+  let bucketParams = {
+    Bucket: bucketName,
+    Key: keyName,
+  };
+
+  // Call S3 to retrieve the file
+  s3.getObject(bucketParams)
+    .createReadStream()
+    .on("error", function (err) {
+      console.log("Error", err);
+    })
+    .on("close", function () {
+      console.log("Done");
+    });
+
+  // Create the parameters for calling listObjects
+  let params = {
+    Bucket: bucketName,
+    Key: keyName,
+    ACL: "public-read",
+  };
+
+  s3.putObjectAcl(params, function (err, data) {
+    if (err) console.log(err, err.stack);
+    // an error occurred
+    else console.log(data); // successful response
+  });
 };
 
 // ======================================================== //
@@ -336,6 +388,11 @@ async function main() {
     BUCKET_NAME,
     ["football.jpg", "code.jpg"]
   );
+  await sleep(5000);
+
+  // CREATE - File Url function call
+  console.log("\nGetting file url for " + BUCKET_NAME);
+  createFileUrl(BUCKET_NAME, "football.jpg");
   await sleep(5000);
 
   // ======================================================== //
