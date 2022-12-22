@@ -197,6 +197,47 @@ const createFileUrl = (bucketName, keyName) => {
   });
 };
 
+// create a view url for images in bucket & add to a new txt file with VIEW permissions
+const createImageViewUrl = (bucketName, keyName) => {
+  let url = `https://${bucketName}.s3.amazonaws.com/${keyName}`;
+  fs.appendFile("imageViewUrls.txt", url + "\n", function (err) {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log(`View URL "${url}" created`);
+    }
+  });
+
+  // Create the parameters for calling listObjects
+  let bucketParams = {
+    Bucket: bucketName,
+    Key: keyName,
+  };
+
+  // Call S3 to retrieve the file
+  s3.getObject(bucketParams)
+    .createReadStream()
+    .on("error", function (err) {
+      console.log("Error", err);
+    })
+    .on("close", function () {
+      console.log("Done");
+    });
+
+  // Create the parameters for calling listObjects
+  let params = {
+    Bucket: bucketName,
+    Key: keyName,
+    ACL: "public-read",
+  };
+
+  s3.putObjectAcl(params, function (err, data) {
+    if (err) console.log(err, err.stack);
+    // an error occurred
+    else console.log(data); // successful response
+  });
+};
+
 // ======================================================== //
 //               R E A D   F U N C T I O N S
 // ======================================================== //
@@ -393,6 +434,11 @@ async function main() {
   // CREATE - File Url function call
   console.log("\nGetting file url for " + BUCKET_NAME);
   createFileUrl(BUCKET_NAME, "football.jpg");
+  await sleep(5000);
+
+  // CREATE - View file function call
+  console.log("\nViewing file for " + BUCKET_NAME);
+  viewFile(BUCKET_NAME, "football.jpg");
   await sleep(5000);
 
   // ======================================================== //
