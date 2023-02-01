@@ -4,3 +4,4 @@ assets
 randomBucketName.txt
 fileUrls.txt
 .vscode
+.DS_Store
